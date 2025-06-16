@@ -1,13 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import os
 import datetime
 
 app = FastAPI()
-LOG_FILE = "../logs/errores.log"
 
-def escribir_log(mensaje):
-    with open(LOG_FILE, "a") as f:
-        f.write(f"{datetime.datetime.now()}: {mensaje}\n")
+# Carpetas para HTML y JS
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+LOG_FILE = "logs/errores.log"
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/diagnostico")
 def diagnostico():
