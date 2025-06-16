@@ -19,9 +19,58 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Rutas de logs
-LOG_FILE = "logs/errores.log"
-ACTIVIDAD_LOG = "logs/actividad.log"
+# Directorios de trabajo
+LOG_DIR = "logs"
+CONTROL_DIR = "control"
+
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(CONTROL_DIR, exist_ok=True)
+
+# Archivos de registro
+LOG_FILE = os.path.join(LOG_DIR, "errores.log")
+ACTIVIDAD_LOG = os.path.join(LOG_DIR, "actividad.log")
+
+# Archivos de control
+RUTAS_FILE = os.path.join(CONTROL_DIR, "rutas.txt")
+AGENTES_FILE = os.path.join(CONTROL_DIR, "agentes.txt")
+BITACORA_FILE = os.path.join(CONTROL_DIR, "bitacora.txt")
+
+def inicializar_archivos():
+    """Crea archivos básicos si aún no existen."""
+    archivos_iniciales = {
+        RUTAS_FILE: (
+            "/               → GET  → index.html / static/script.js / main.py\n"
+            "                 Muestra la interfaz principal de la grabadora.\n\n"
+            "/diagnostico     → GET  → main.py\n"
+            "                 Ejecuta diagnóstico del sistema y devuelve errores registrados.\n\n"
+            "/reparar         → GET  → main.py\n"
+            "                 Limpia el archivo de errores para reiniciar el estado lógico.\n"
+        ),
+        AGENTES_FILE: (
+            "[Agente: Registrador de eventos]\n"
+            "Rol: Escribe cada interacción del usuario en actividad.log\n"
+            "Estado: Activo\n"
+            "Archivos: main.py\n\n"
+            "[Agente: Diagnóstico inteligente]\n"
+            "Rol: Analiza el estado del sistema y sugiere mejoras automáticas\n"
+            "Estado: Activo\n"
+            "Archivos: main.py\n\n"
+            "[Agente: Auto-mejorador]\n"
+            "Rol: Llama a OpenAI y aplica correcciones automáticas\n"
+            "Estado: Futuro\n"
+            "Archivos esperados: diagnostico.py, analisis_ia.py\n"
+        ),
+        BITACORA_FILE: (
+            f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Bitácora iniciada.\n"
+        ),
+    }
+
+    for ruta, contenido in archivos_iniciales.items():
+        if not os.path.exists(ruta):
+            with open(ruta, "w") as f:
+                f.write(contenido)
+
+inicializar_archivos()
 
 # ╔════════════════════════════════════════════════════════════╗
 # ║           FUNCIONES DE REGISTRO DE ACTIVIDAD              ║
