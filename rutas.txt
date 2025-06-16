@@ -1,0 +1,8 @@
+/               → GET  → index.html / static/script.js / main.py
+                 Muestra la interfaz principal de la grabadora.
+
+/diagnostico     → GET  → main.py
+                 Ejecuta diagnóstico del sistema y devuelve errores registrados.
+
+/reparar         → GET  → main.py
+                 Limpia el archivo de errores para reiniciar el estado lógico.

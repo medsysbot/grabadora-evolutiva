@@ -1,0 +1,1 @@
+[2025-06-16 22:31] Se crean archivos de documentación inicial para rutas, agentes y bitácora.

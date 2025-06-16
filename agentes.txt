@@ -1,0 +1,14 @@
+[Agente: Registrador de eventos]
+Rol: Escribe cada interacción del usuario en actividad.log
+Estado: Activo
+Archivos: main.py
+
+[Agente: Diagnóstico inteligente]
+Rol: Analiza el estado del sistema y sugiere mejoras automáticas
+Estado: Activo
+Archivos: main.py
+
+[Agente: Auto-mejorador]
+Rol: Llama a OpenAI y aplica correcciones automáticas
+Estado: Futuro
+Archivos esperados: diagnostico.py, analisis_ia.py
