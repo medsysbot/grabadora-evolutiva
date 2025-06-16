@@ -21,19 +21,22 @@ templates = Jinja2Templates(directory="templates")
 
 # Rutas de logs
 LOG_FILE = "logs/errores.log"
-ACTIVITY_LOG = "logs/actividad.log"
+ACTIVIDAD_LOG = "logs/actividad.log"
 
 # ╔════════════════════════════════════════════════════════════╗
-# ║                  FUNCIONES AUXILIARES                     ║
+# ║           FUNCIONES DE REGISTRO DE ACTIVIDAD              ║
 # ╚════════════════════════════════════════════════════════════╝
 
 
-def registrar_evento(mensaje: str) -> None:
-    """Registra un mensaje en el archivo de actividad con timestamp."""
-    os.makedirs(os.path.dirname(ACTIVITY_LOG), exist_ok=True)
-    marca_tiempo = datetime.datetime.now().isoformat()
-    with open(ACTIVITY_LOG, "a", encoding="utf-8") as log:
-        log.write(f"{marca_tiempo} - {mensaje}\n")
+def registrar_evento(mensaje: str):
+    """Guarda un evento de actividad con marca temporal."""
+    os.makedirs(os.path.dirname(ACTIVIDAD_LOG), exist_ok=True)
+    try:
+        with open(ACTIVIDAD_LOG, "a") as f:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}] {mensaje}\n")
+    except Exception as e:
+        print(f"Error al registrar actividad: {e}")
 
 # ╔════════════════════════════════════════════════════════════╗
 # ║                         RUTAS                             ║
@@ -45,7 +48,7 @@ async def serve_index(request: Request):
 
 @app.get("/diagnostico")
 def diagnostico():
-    registrar_evento("Consulta de diagnostico")
+    registrar_evento("Se ejecutó diagnóstico del sistema.")
     if not os.path.exists(LOG_FILE):
         return "Todo parece estar en orden."
     with open(LOG_FILE) as f:
@@ -54,6 +57,7 @@ def diagnostico():
 
 @app.get("/reparar")
 def reparar():
+    registrar_evento("Se ejecutó reparación del sistema.")
     if os.path.exists(LOG_FILE):
         os.remove(LOG_FILE)
         return "Log de errores limpiado. Sistema reiniciado lógicamente."
