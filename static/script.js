@@ -4,10 +4,30 @@ let audioChunks = [];
 function iniciarGrabacion() {
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => {
-      mediaRecorder = new MediaRecorder(stream);
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      } catch (e) {
+        alert("Este navegador no soporta el tipo de audio requerido.");
+        return;
+      }
+
       mediaRecorder.start();
       audioChunks = [];
-      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        if (audioChunks.length === 0) {
+          alert("No se grabó ningún audio.");
+          return;
+        }
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioURL = URL.createObjectURL(blob);
+        const player = document.getElementById("player");
+        player.src = audioURL;
+      };
     })
     .catch(err => {
       alert("Error: No se puede acceder al micrófono.");
@@ -15,19 +35,20 @@ function iniciarGrabacion() {
 }
 
 function detenerGrabacion() {
-  if (mediaRecorder) {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
     mediaRecorder.stop();
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(audioChunks);
-      const audioURL = URL.createObjectURL(blob);
-      document.getElementById("player").src = audioURL;
-    };
+  } else {
+    alert("No hay grabación en curso.");
   }
 }
 
 function reproducirGrabacion() {
   const player = document.getElementById("player");
-  player.play();
+  if (player.src) {
+    player.play();
+  } else {
+    alert("No hay audio para reproducir.");
+  }
 }
 
 function diagnosticar() {
