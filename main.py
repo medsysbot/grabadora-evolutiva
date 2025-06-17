@@ -70,6 +70,10 @@ def inicializar_archivos():
             with open(ruta, "w") as f:
                 f.write(contenido)
 
+    # Garantizar existencia del log de actividad
+    if not os.path.exists(ACTIVIDAD_LOG):
+        open(ACTIVIDAD_LOG, "a").close()
+
 inicializar_archivos()
 
 # ╔════════════════════════════════════════════════════════════╗
@@ -118,3 +122,17 @@ async def registrar_desde_frontend(request: Request):
     mensaje = data.get("mensaje", "Evento no especificado.")
     registrar_evento(f"Desde frontend: {mensaje}")
     return {"status": "ok", "registrado": mensaje}
+
+
+@app.get("/historial", response_class=HTMLResponse)
+async def ver_historial(request: Request):
+    """Devuelve una página con el historial de actividad."""
+    registrar_evento("Se consultó el historial")
+    if not os.path.exists(ACTIVIDAD_LOG):
+        eventos = []
+    else:
+        with open(ACTIVIDAD_LOG) as f:
+            eventos = [line.strip() for line in f if line.strip()]
+    return templates.TemplateResponse(
+        "historial.html", {"request": request, "eventos": eventos}
+    )

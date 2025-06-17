@@ -6,3 +6,5 @@
 
 /reparar         → GET  → main.py
                  Limpia el archivo de errores para reiniciar el estado lógico.
+/historial      → GET  → main.py/templates/historial.html
+                Muestra una lista de eventos registrados.
