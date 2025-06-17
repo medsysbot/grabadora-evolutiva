@@ -8,3 +8,5 @@
                  Limpia el archivo de errores para reiniciar el estado lógico.
 /historial      → GET  → main.py/templates/historial.html
                 Muestra una lista de eventos registrados.
+/consultar      → POST → main.py/openai_client.py
+                 Asistente de IA: responde preguntas usando OpenAI.

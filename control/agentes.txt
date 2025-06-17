@@ -13,6 +13,11 @@ Rol: Llama a OpenAI y aplica correcciones automáticas
 Estado: Futuro
 Archivos esperados: diagnostico.py, analisis_ia.py
 
+[Agente: Asistente de IA]
+Rol: Atiende consultas del usuario mediante OpenAI
+Estado: Activo
+Archivos: main.py, openai_client.py
+
 [Agente: Autodiagnosticador]
 Rol: Ejecuta chequeos programados del sistema y los registra en auto_diagnostico.log
 Estado: Activo

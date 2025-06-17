@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import datetime
+from openai_client import consultar_openai
 
 # ╔════════════════════════════════════════════════════════════╗
 # ║                 CONFIGURACIÓN DE ARCHIVOS                 ║
@@ -122,6 +123,15 @@ async def registrar_desde_frontend(request: Request):
     mensaje = data.get("mensaje", "Evento no especificado.")
     registrar_evento(f"Desde frontend: {mensaje}")
     return {"status": "ok", "registrado": mensaje}
+
+
+@app.post("/consultar")
+async def consultar_openai_backend(request: Request):
+    data = await request.json()
+    pregunta = data.get("mensaje", "")
+    respuesta = consultar_openai(pregunta)
+    registrar_evento(f"Consulta IA: {pregunta} → {respuesta[:60]}...")
+    return {"respuesta": respuesta}
 
 
 @app.get("/historial", response_class=HTMLResponse)
