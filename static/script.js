@@ -1,6 +1,16 @@
 let mediaRecorder;
 let audioChunks = [];
 
+function obtenerMimeType() {
+  const formatos = ['audio/webm', 'audio/mp4', 'audio/wav'];
+  for (const tipo of formatos) {
+    if (MediaRecorder.isTypeSupported(tipo)) {
+      return tipo;
+    }
+  }
+  return null;
+}
+
 function registrarEvento(mensaje) {
   fetch("/registrar", {
     method: "POST",
@@ -15,8 +25,13 @@ function iniciarGrabacion() {
   registrarEvento("Se inició grabación");
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => {
+      const tipo = obtenerMimeType();
+      if (!tipo) {
+        alert("Este navegador no soporta grabación de audio compatible.");
+        return;
+      }
       try {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: tipo });
       } catch (e) {
         alert("Este navegador no soporta el tipo de audio requerido.");
         return;
@@ -34,7 +49,7 @@ function iniciarGrabacion() {
           alert("No se grabó ningún audio.");
           return;
         }
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const blob = new Blob(audioChunks, { type: tipo });
         const audioURL = URL.createObjectURL(blob);
         const player = document.getElementById("player");
         player.src = audioURL;
