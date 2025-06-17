@@ -111,3 +111,10 @@ def reparar():
         os.remove(LOG_FILE)
         return "Log de errores limpiado. Sistema reiniciado lógicamente."
     return "No hay errores a reparar."
+
+@app.post("/registrar")
+async def registrar_desde_frontend(request: Request):
+    data = await request.json()
+    mensaje = data.get("mensaje", "Evento no especificado.")
+    registrar_evento(f"Desde frontend: {mensaje}")
+    return {"status": "ok", "registrado": mensaje}
