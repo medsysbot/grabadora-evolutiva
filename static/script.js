@@ -1,7 +1,18 @@
 let mediaRecorder;
 let audioChunks = [];
 
+function registrarEvento(mensaje) {
+  fetch("/registrar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mensaje })
+  }).catch(() => {
+    console.warn("No se pudo registrar el evento");
+  });
+}
+
 function iniciarGrabacion() {
+  registrarEvento("Se inició grabación");
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => {
       try {
@@ -35,6 +46,7 @@ function iniciarGrabacion() {
 }
 
 function detenerGrabacion() {
+  registrarEvento("Se detuvo la grabación");
   if (mediaRecorder && mediaRecorder.state !== "inactive") {
     mediaRecorder.stop();
   } else {
@@ -43,6 +55,7 @@ function detenerGrabacion() {
 }
 
 function reproducirGrabacion() {
+  registrarEvento("Se reprodujo el audio");
   const player = document.getElementById("player");
   if (player.src) {
     player.play();
