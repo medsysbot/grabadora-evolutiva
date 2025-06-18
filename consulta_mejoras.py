@@ -2,6 +2,7 @@ import os
 import schedule
 import time
 from openai import OpenAI
+from sugerencias import guardar_pendiente
 
 LOG_ACTIVIDAD = "logs/actividad.log"
 LOG_MEJORAS = "logs/mejoras_sugeridas.log"
@@ -34,6 +35,7 @@ def consultar_mejora_gpt():
     # También registrar en actividad
     with open(LOG_ACTIVIDAD, "a") as f:
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Consulta automática de mejora a GPT-4.1\n")
+    guardar_pendiente(respuesta)
 
 
 # Programar la consulta para todos los martes a las 9:00
