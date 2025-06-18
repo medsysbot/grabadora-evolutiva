@@ -10,3 +10,6 @@
                 Muestra una lista de eventos registrados.
 /consultar      → POST → main.py/openai_client.py
                  Asistente de IA: responde preguntas usando OpenAI.
+openai_scheduler.py  → Ejecutable
+                Agenda consultas automáticas a OpenAI (Lu-Mi-Vi 10:00) y
+                respeta el tope mensual definido en consumo_mes.txt.
