@@ -141,3 +141,38 @@ function descartarSugerencia(id) {
     body: JSON.stringify({id})
   }).then(() => cargarSugerencias());
 }
+
+function verLog(nombre) {
+  fetch(`/ver_log?archivo=${encodeURIComponent(nombre)}`)
+    .then(res => {
+      if (nombre.endsWith('.json')) {
+        return res.json();
+      }
+      return res.text();
+    })
+    .then(data => {
+      const cont = document.getElementById('resultado-log');
+      if (!cont) return;
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          cont.innerHTML = '<p class="text-center">Lista vacía.</p>';
+          return;
+        }
+        let html = '<ul class="list-group">';
+        data.forEach(item => {
+          if (typeof item === 'object') {
+            const fecha = item.fecha ? item.fecha + ' - ' : '';
+            const estado = item.estado ? ' [' + item.estado + ']' : '';
+            const texto = item.texto || JSON.stringify(item);
+            html += `<li class="list-group-item bg-dark text-light">${fecha}${texto}${estado}</li>`;
+          } else {
+            html += `<li class="list-group-item bg-dark text-light">${item}</li>`;
+          }
+        });
+        html += '</ul>';
+        cont.innerHTML = html;
+      } else {
+        cont.innerHTML = `<pre class="bg-dark text-info p-2">${data}</pre>`;
+      }
+    });
+}

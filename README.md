@@ -3,7 +3,7 @@
 Este proyecto permite grabar audio desde el navegador y lleva un registro de cada acción realizada. Incluye herramientas de diagnóstico y un pequeño historial visible desde la interfaz.
 
 ## Estructura de carpetas
-- **logs/**: archivos de registro. `actividad.log` almacena cada evento. Se incluye un `.keep` para conservar la carpeta en git.
+- **logs/**: archivos de registro. `actividad.log`, `mejoras_sugeridas.log` y varias listas JSON de sugerencias. Se incluye un `.keep` para conservar la carpeta en git.
 - **control/**: archivos de seguimiento del proyecto (`rutas.txt`, `agentes.txt`, `bitacora.txt`).
 - **static/**: archivos estáticos como el script del frontend.
 - **templates/**: plantillas HTML de la aplicación.
@@ -12,6 +12,10 @@ Este proyecto permite grabar audio desde el navegador y lleva un registro de cad
 - Cada botón de la interfaz (grabar, detener, reproducir) envía un evento al backend mediante `/registrar`.
 - Los eventos se guardan en `logs/actividad.log` con fecha y hora.
 - El botón **Ver historial** abre `/historial`, donde se muestran todas las acciones registradas. Si el archivo está vacío se indica en pantalla.
+- Desde `/admin` se pueden revisar todos los archivos de la carpeta `logs` mediante botones que muestran su contenido.
+
+## Administración de logs
+La sección `/admin` permite visualizar en pantalla el contenido de todos los archivos de registro.
 
 ## Compatibilidad de audio
 El script intenta usar el formato de audio más compatible (WebM, MP4 o WAV). En navegadores Safari/iOS se probará MP4. Si ninguno está disponible, se mostrará un mensaje de incompatibilidad.
