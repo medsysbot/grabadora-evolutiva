@@ -4,6 +4,7 @@ import datetime
 
 LOG_DIR = "logs"
 ACTIVIDAD_LOG = os.path.join(LOG_DIR, "actividad.log")
+MEJORAS_LOG = os.path.join(LOG_DIR, "mejoras_sugeridas.log")
 PENDIENTES_FILE = os.path.join(LOG_DIR, "sugerencias_pendientes.json")
 APLICADAS_FILE = os.path.join(LOG_DIR, "sugerencias_aplicadas.json")
 RECHAZADAS_FILE = os.path.join(LOG_DIR, "sugerencias_rechazadas.json")
@@ -11,19 +12,26 @@ CODIGO_FILE = os.path.join(LOG_DIR, "sugerencias_codigo.json")
 
 
 def asegurar_archivos():
-    """Garantiza la existencia de todos los archivos de log."""
-    os.makedirs(LOG_DIR, exist_ok=True)
-    archivos = {
-        ACTIVIDAD_LOG: "",
-        PENDIENTES_FILE: "[]",
-        APLICADAS_FILE: "[]",
-        RECHAZADAS_FILE: "[]",
-        CODIGO_FILE: "[]",
-    }
-    for ruta, contenido in archivos.items():
-        if not os.path.exists(ruta):
-            with open(ruta, "w") as f:
-                f.write(contenido)
+    """Garantiza la existencia de la carpeta y archivos de log."""
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+
+    archivos_iniciales = [
+        ACTIVIDAD_LOG,
+        MEJORAS_LOG,
+        PENDIENTES_FILE,
+        APLICADAS_FILE,
+        RECHAZADAS_FILE,
+        CODIGO_FILE,
+    ]
+
+    for archivo in archivos_iniciales:
+        if not os.path.exists(archivo):
+            if archivo.endswith(".json"):
+                with open(archivo, "w") as f:
+                    f.write("[]")
+            else:
+                open(archivo, "w").close()
 
 
 def _leer_lista(path):

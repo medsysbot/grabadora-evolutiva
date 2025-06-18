@@ -109,7 +109,7 @@ inicializar_archivos()
 
 def registrar_evento(mensaje: str):
     """Guarda un evento de actividad con marca temporal."""
-    os.makedirs(os.path.dirname(ACTIVIDAD_LOG), exist_ok=True)
+    asegurar_archivos()
     try:
         with open(ACTIVIDAD_LOG, "a") as f:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -227,6 +227,7 @@ def ver_log(archivo: str):
 
 @app.post("/consultar_mejora_manual")
 async def consultar_mejora_manual():
+    asegurar_archivos()
     log_path = ACTIVIDAD_LOG
     if not os.path.exists(log_path):
         actividad = "No hay actividad registrada aún."

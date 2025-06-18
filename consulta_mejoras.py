@@ -2,13 +2,14 @@ import os
 import schedule
 import time
 from openai import OpenAI
-from sugerencias import guardar_pendiente
+from sugerencias import guardar_pendiente, asegurar_archivos
 
 LOG_ACTIVIDAD = "logs/actividad.log"
 LOG_MEJORAS = "logs/mejoras_sugeridas.log"
 
 
 def obtener_actividad():
+    asegurar_archivos()
     if not os.path.exists(LOG_ACTIVIDAD):
         return "No hay actividad registrada aún."
     with open(LOG_ACTIVIDAD, "r") as f:
@@ -16,6 +17,7 @@ def obtener_actividad():
 
 
 def consultar_mejora_gpt():
+    asegurar_archivos()
     openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     actividad = obtener_actividad()
     prompt = (
