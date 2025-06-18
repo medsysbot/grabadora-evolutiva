@@ -5,14 +5,14 @@ import os
 import datetime
 import threading
 from main import diagnostico, registrar_evento
+from sugerencias import asegurar_archivos
 
 LOG_DIR = "logs"
 AUTO_LOG = os.path.join(LOG_DIR, "auto_diagnostico.log")
 
-os.makedirs(LOG_DIR, exist_ok=True)
-
 def ejecutar_autodiagnostico():
     """Llama a /diagnostico y registra su resultado."""
+    asegurar_archivos()
     try:
         resultado = diagnostico()
     except Exception as e:
