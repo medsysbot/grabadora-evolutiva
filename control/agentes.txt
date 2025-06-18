@@ -22,3 +22,8 @@ Archivos: main.py, openai_client.py
 Rol: Ejecuta chequeos programados del sistema y los registra en auto_diagnostico.log
 Estado: Activo
 Archivos: autodiagnostico.py / logs/auto_diagnostico.log / logs/actividad.log
+
+[Agente: Consultor IA programado]
+Rol: Conecta a OpenAI hasta el tope mensual de consultas, configurable.
+Estado: Activo
+Archivos: openai_client.py, openai_scheduler.py, consumo_mes.txt, mes_actual.txt
