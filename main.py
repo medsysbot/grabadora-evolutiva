@@ -3,7 +3,7 @@
 # ╚════════════════════════════════════════════════════════════╝
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
@@ -38,6 +38,20 @@ os.makedirs(CONTROL_DIR, exist_ok=True)
 # Archivos de registro
 LOG_FILE = os.path.join(LOG_DIR, "errores.log")
 ACTIVIDAD_LOG = os.path.join(LOG_DIR, "actividad.log")
+MEJORAS_LOG = os.path.join(LOG_DIR, "mejoras_sugeridas.log")
+PENDIENTES_JSON = os.path.join(LOG_DIR, "sugerencias_pendientes.json")
+APLICADAS_JSON = os.path.join(LOG_DIR, "sugerencias_aplicadas.json")
+RECHAZADAS_JSON = os.path.join(LOG_DIR, "sugerencias_rechazadas.json")
+CODIGO_JSON = os.path.join(LOG_DIR, "sugerencias_codigo.json")
+
+LOG_FILES = {
+    "actividad.log": ACTIVIDAD_LOG,
+    "mejoras_sugeridas.log": MEJORAS_LOG,
+    "sugerencias_pendientes.json": PENDIENTES_JSON,
+    "sugerencias_aplicadas.json": APLICADAS_JSON,
+    "sugerencias_rechazadas.json": RECHAZADAS_JSON,
+    "sugerencias_codigo.json": CODIGO_JSON,
+}
 
 # Archivos de control
 RUTAS_FILE = os.path.join(CONTROL_DIR, "rutas.txt")
@@ -72,8 +86,11 @@ def inicializar_archivos():
         BITACORA_FILE: (
             f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Bitácora iniciada.\n"
         ),
-        os.path.join(LOG_DIR, "sugerencias_pendientes.json"): "[]",
-        os.path.join(LOG_DIR, "sugerencias_aplicadas.json"): "[]",
+        PENDIENTES_JSON: "[]",
+        APLICADAS_JSON: "[]",
+        RECHAZADAS_JSON: "[]",
+        CODIGO_JSON: "[]",
+        MEJORAS_LOG: "",
     }
 
     for ruta, contenido in archivos_iniciales.items():
@@ -81,9 +98,14 @@ def inicializar_archivos():
             with open(ruta, "w") as f:
                 f.write(contenido)
 
-    # Garantizar existencia del log de actividad
-    if not os.path.exists(ACTIVIDAD_LOG):
-        open(ACTIVIDAD_LOG, "a").close()
+    # Garantizar existencia de todos los archivos de logs
+    for ruta in LOG_FILES.values():
+        if not os.path.exists(ruta):
+            with open(ruta, "w") as f:
+                if ruta.endswith(".json"):
+                    f.write("[]")
+                else:
+                    f.write("")
 
 inicializar_archivos()
 
@@ -177,13 +199,47 @@ async def ver_historial(request: Request):
         "historial.html", {"request": request, "eventos": eventos}
     )
 
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_logs(request: Request):
+    """Muestra la página de administración de logs."""
+    registrar_evento("Se accedió a administración de logs")
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+
+@app.get("/ver_log")
+def ver_log(archivo: str):
+    """Devuelve el contenido de un archivo de log."""
+    nombre = os.path.basename(archivo)
+    if nombre not in LOG_FILES:
+        return PlainTextResponse("Archivo no permitido", status_code=400)
+    ruta = LOG_FILES[nombre]
+    if not os.path.exists(ruta):
+        with open(ruta, "w") as f:
+            if ruta.endswith(".json"):
+                f.write("[]")
+            else:
+                f.write("")
+    registrar_evento(f"Se consultó {nombre}")
+    if ruta.endswith(".json"):
+        with open(ruta) as f:
+            contenido = f.read().strip() or "[]"
+        try:
+            data = json.loads(contenido)
+        except json.JSONDecodeError:
+            data = []
+        return JSONResponse(data)
+    with open(ruta) as f:
+        texto = f.read()
+    return PlainTextResponse(texto)
+
 # ╔════════════════════════════════════════════════════════════╗
 # ║      RUTA: /consultar_mejora_manual (POST desde web)       ║
 # ╚════════════════════════════════════════════════════════════╝
 
 @app.post("/consultar_mejora_manual")
 async def consultar_mejora_manual():
-    log_path = "logs/actividad.log"
+    log_path = ACTIVIDAD_LOG
     if not os.path.exists(log_path):
         actividad = "No hay actividad registrada aún."
     else:
@@ -204,8 +260,7 @@ async def consultar_mejora_manual():
         ]
     ).choices[0].message.content.strip()
 
-    log_mejoras = "logs/mejoras_sugeridas.log"
-    with open(log_mejoras, "a") as f:
+    with open(MEJORAS_LOG, "a") as f:
         import time
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {respuesta}\n")
     guardar_pendiente(respuesta)
@@ -215,7 +270,7 @@ async def consultar_mejora_manual():
 @app.get("/sugerencias_pendientes")
 def sugerencias_pendientes():
     import json, os
-    archivo = "logs/sugerencias_pendientes.json"
+    archivo = PENDIENTES_JSON
     if not os.path.exists(archivo):
         return []
     with open(archivo) as f:
@@ -230,9 +285,9 @@ async def aplicar_sugerencia(request: Request):
     data = await request.json()
     sugerencia_id = data.get("id")
 
-    pendientes_file = "logs/sugerencias_pendientes.json"
-    aplicadas_file = "logs/sugerencias_aplicadas.json"
-    codigo_file = "logs/sugerencias_codigo.json"
+    pendientes_file = PENDIENTES_JSON
+    aplicadas_file = APLICADAS_JSON
+    codigo_file = CODIGO_JSON
 
     with open(pendientes_file) as f:
         pendientes = json.load(f)
@@ -257,7 +312,7 @@ async def aplicar_sugerencia(request: Request):
     with open(aplicadas_file, "w") as f:
         json.dump(aplicadas, f, indent=2)
 
-    with open("logs/actividad.log", "a") as f:
+    with open(ACTIVIDAD_LOG, "a") as f:
         f.write(
             f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se aplicó sugerencia de IA: {sugerencia['texto']}\n"
         )
@@ -283,17 +338,32 @@ async def aplicar_sugerencia(request: Request):
 
 @app.post("/descartar_sugerencia")
 async def descartar_sugerencia(request: Request):
-    import json, os
+    import json, os, time
     data = await request.json()
     sugerencia_id = data.get("id")
-    pendientes_file = "logs/sugerencias_pendientes.json"
+    pendientes_file = PENDIENTES_JSON
+    rechazadas_file = RECHAZADAS_JSON
 
     with open(pendientes_file) as f:
         pendientes = json.load(f)
+    sugerencia = next((s for s in pendientes if s["id"] == sugerencia_id), None)
     pendientes = [s for s in pendientes if s["id"] != sugerencia_id]
     with open(pendientes_file, "w") as f:
         json.dump(pendientes, f, indent=2)
-    with open("logs/actividad.log", "a") as f:
-        import time
-        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se descartó sugerencia de IA: {sugerencia_id}\n")
+
+    if sugerencia:
+        sugerencia["estado"] = "rechazada"
+        if os.path.exists(rechazadas_file):
+            with open(rechazadas_file) as f:
+                rechazadas = json.load(f)
+        else:
+            rechazadas = []
+        rechazadas.append(sugerencia)
+        with open(rechazadas_file, "w") as f:
+            json.dump(rechazadas, f, indent=2)
+
+    with open(ACTIVIDAD_LOG, "a") as f:
+        f.write(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se descartó sugerencia de IA: {sugerencia_id}\n"
+        )
     return {"status": "ok"}

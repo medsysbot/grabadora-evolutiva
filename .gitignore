@@ -193,3 +193,4 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 logs/sugerencias_*.json
+logs/*.log

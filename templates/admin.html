@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración de Logs</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+  <div class="container py-5">
+    <h1 class="text-center mb-4">Administración de Logs</h1>
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+      <button class="btn btn-outline-info" onclick="verLog('actividad.log')">Ver actividad</button>
+      <button class="btn btn-outline-info" onclick="verLog('mejoras_sugeridas.log')">Ver sugerencias generadas</button>
+      <button class="btn btn-outline-info" onclick="verLog('sugerencias_pendientes.json')">Ver sugerencias pendientes</button>
+      <button class="btn btn-outline-info" onclick="verLog('sugerencias_aplicadas.json')">Ver sugerencias aplicadas</button>
+      <button class="btn btn-outline-info" onclick="verLog('sugerencias_rechazadas.json')">Ver sugerencias rechazadas</button>
+      <button class="btn btn-outline-info" onclick="verLog('sugerencias_codigo.json')">Ver código generado</button>
+    </div>
+    <div id="resultado-log" class="mb-4"></div>
+    <div class="text-center">
+      <a href="/" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+  <script src="/static/script.js"></script>
+</body>
+</html>
