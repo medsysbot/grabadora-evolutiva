@@ -102,6 +102,26 @@ def registrar_evento(mensaje: str):
     except Exception as e:
         print(f"Error al registrar actividad: {e}")
 
+
+def generar_codigo_mejora(texto_sugerencia: str) -> str:
+    """Consulta a OpenAI para obtener el código de la mejora aceptada."""
+    openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    prompt = (
+        "La siguiente sugerencia de mejora fue aceptada: "
+        f"'{texto_sugerencia}'. "
+        "Mi aplicación está hecha en HTML, JavaScript y Python (FastAPI). "
+        "Por favor, generá el código necesario para implementar esta mejora. "
+        "Decime claramente qué archivo debo modificar y dónde pegar el código, con comentarios y recomendaciones."
+    )
+    respuesta = openai.chat.completions.create(
+        model="gpt-4.1",
+        messages=[
+            {"role": "system", "content": "Sos un arquitecto digital que escribe código y explica cambios."},
+            {"role": "user", "content": prompt},
+        ],
+    ).choices[0].message.content.strip()
+    return respuesta
+
 # ╔════════════════════════════════════════════════════════════╗
 # ║                         RUTAS                             ║
 # ╚════════════════════════════════════════════════════════════╝
@@ -206,7 +226,6 @@ def sugerencias_pendientes():
 async def aplicar_sugerencia(request: Request):
     """Marca una sugerencia como aplicada y genera el código recomendado."""
     import json, os, time
-    from openai import OpenAI
 
     data = await request.json()
     sugerencia_id = data.get("id")
@@ -243,48 +262,23 @@ async def aplicar_sugerencia(request: Request):
             f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se aplicó sugerencia de IA: {sugerencia['texto']}\n"
         )
 
-    openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    prompt = (
-        "La siguiente sugerencia de mejora fue aceptada: '"
-        + sugerencia["texto"]
-        + "'. Mi aplicación está hecha en HTML, JavaScript y Python (FastAPI). "
-        "Por favor, generá el código necesario para implementar esta mejora. "
-        "Decime claramente qué archivo debo modificar y dónde pegar el código, con comentarios y recomendaciones."
-    )
+    codigo = generar_codigo_mejora(sugerencia["texto"])
 
-    respuesta = (
-        openai.chat.completions.create(
-            model="gpt-4.1",
-            messages=[
+    with open(codigo_file, "a") as f:
+        f.write(
+            json.dumps(
                 {
-                    "role": "system",
-                    "content": "Sos un arquitecto digital que escribe código y explica cambios.",
+                    "id": sugerencia["id"],
+                    "fecha": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "sugerencia": sugerencia["texto"],
+                    "codigo": codigo,
                 },
-                {"role": "user", "content": prompt},
-            ],
+                ensure_ascii=False,
+            )
+            + "\n"
         )
-        .choices[0]
-        .message.content.strip()
-    )
 
-    if not os.path.exists(codigo_file):
-        codigos = []
-    else:
-        with open(codigo_file) as f:
-            codigos = json.load(f)
-
-    codigos.append(
-        {
-            "id": sugerencia["id"],
-            "fecha": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "sugerencia": sugerencia["texto"],
-            "codigo": respuesta,
-        }
-    )
-    with open(codigo_file, "w") as f:
-        json.dump(codigos, f, indent=2, ensure_ascii=False)
-
-    return {"status": "ok", "codigo": respuesta}
+    return {"status": "ok", "codigo": codigo}
 
 
 @app.post("/descartar_sugerencia")

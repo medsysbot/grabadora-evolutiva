@@ -115,6 +115,7 @@ function cargarSugerencias() {
           </div>
         `;
       });
+      document.getElementById("codigo-generado").textContent = "";
     });
 }
 
@@ -123,7 +124,14 @@ function aplicarSugerencia(id) {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({id})
-  }).then(() => cargarSugerencias());
+  })
+    .then(r => r.json())
+    .then(data => {
+      cargarSugerencias();
+      if (data.codigo) {
+        document.getElementById("codigo-generado").textContent = data.codigo;
+      }
+    });
 }
 
 function descartarSugerencia(id) {
