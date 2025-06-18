@@ -7,9 +7,16 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
+import json
 import datetime
 from openai_client import consultar_openai
 from openai import OpenAI
+from sugerencias import (
+    guardar_pendiente,
+    obtener_pendientes,
+    guardar_pendientes,
+    agregar_aplicada,
+)
 
 # ╔════════════════════════════════════════════════════════════╗
 # ║                 CONFIGURACIÓN DE ARCHIVOS                 ║
@@ -65,6 +72,8 @@ def inicializar_archivos():
         BITACORA_FILE: (
             f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Bitácora iniciada.\n"
         ),
+        os.path.join(LOG_DIR, "sugerencias_pendientes.json"): "[]",
+        os.path.join(LOG_DIR, "sugerencias_aplicadas.json"): "[]",
     }
 
     for ruta, contenido in archivos_iniciales.items():
@@ -179,5 +188,65 @@ async def consultar_mejora_manual():
     with open(log_mejoras, "a") as f:
         import time
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {respuesta}\n")
-
+    guardar_pendiente(respuesta)
     return {"respuesta": respuesta}
+
+
+@app.get("/sugerencias_pendientes")
+def sugerencias_pendientes():
+    import json, os
+    archivo = "logs/sugerencias_pendientes.json"
+    if not os.path.exists(archivo):
+        return []
+    with open(archivo) as f:
+        return json.load(f)
+
+
+@app.post("/aplicar_sugerencia")
+async def aplicar_sugerencia(request: Request):
+    import json, os
+    data = await request.json()
+    sugerencia_id = data.get("id")
+    pendientes_file = "logs/sugerencias_pendientes.json"
+    aplicadas_file = "logs/sugerencias_aplicadas.json"
+
+    with open(pendientes_file) as f:
+        pendientes = json.load(f)
+    sugerencia = next((s for s in pendientes if s["id"] == sugerencia_id), None)
+    pendientes = [s for s in pendientes if s["id"] != sugerencia_id]
+
+    with open(pendientes_file, "w") as f:
+        json.dump(pendientes, f, indent=2)
+
+    if sugerencia:
+        sugerencia["estado"] = "aplicada"
+        if not os.path.exists(aplicadas_file):
+            aplicadas = []
+        else:
+            with open(aplicadas_file) as f:
+                aplicadas = json.load(f)
+        aplicadas.append(sugerencia)
+        with open(aplicadas_file, "w") as f:
+            json.dump(aplicadas, f, indent=2)
+        with open("logs/actividad.log", "a") as f:
+            import time
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se aplicó sugerencia de IA: {sugerencia['texto']}\n")
+    return {"status": "ok"}
+
+
+@app.post("/descartar_sugerencia")
+async def descartar_sugerencia(request: Request):
+    import json, os
+    data = await request.json()
+    sugerencia_id = data.get("id")
+    pendientes_file = "logs/sugerencias_pendientes.json"
+
+    with open(pendientes_file) as f:
+        pendientes = json.load(f)
+    pendientes = [s for s in pendientes if s["id"] != sugerencia_id]
+    with open(pendientes_file, "w") as f:
+        json.dump(pendientes, f, indent=2)
+    with open("logs/actividad.log", "a") as f:
+        import time
+        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se descartó sugerencia de IA: {sugerencia_id}\n")
+    return {"status": "ok"}

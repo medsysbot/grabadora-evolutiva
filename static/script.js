@@ -99,3 +99,37 @@ function consultaManualMejora() {
         "Error al consultar la IA.";
     });
 }
+
+function cargarSugerencias() {
+  fetch("/sugerencias_pendientes")
+    .then(r => r.json())
+    .then(data => {
+      const div = document.getElementById("bandeja-sugerencias");
+      div.innerHTML = "";
+      data.forEach(s => {
+        div.innerHTML += `
+          <div class="card mb-2 p-2">
+            <div>${s.texto}</div>
+            <button class="btn btn-success btn-sm mt-2" onclick="aplicarSugerencia('${s.id}')">Aplicar</button>
+            <button class="btn btn-danger btn-sm mt-2 ms-2" onclick="descartarSugerencia('${s.id}')">Descartar</button>
+          </div>
+        `;
+      });
+    });
+}
+
+function aplicarSugerencia(id) {
+  fetch("/aplicar_sugerencia", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id})
+  }).then(() => cargarSugerencias());
+}
+
+function descartarSugerencia(id) {
+  fetch("/descartar_sugerencia", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id})
+  }).then(() => cargarSugerencias());
+}

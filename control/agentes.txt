@@ -33,3 +33,7 @@ Rol: Consulta automáticamente a GPT-4.1 todos los martes a las 9:00AM por suger
 Estado: Activo
 Archivos: consulta_mejoras.py, logs/mejoras_sugeridas.log, logs/actividad.log
 
+[Agente: Curador de mejoras]
+Rol: Presenta las sugerencias de IA pendientes, permite aceptarlas o rechazarlas y guarda memoria de lo que se aplicó.
+Estado: Activo
+Archivos: logs/sugerencias_pendientes.json, logs/sugerencias_aplicadas.json, main.py, script.js
