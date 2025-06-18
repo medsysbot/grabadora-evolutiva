@@ -204,34 +204,87 @@ def sugerencias_pendientes():
 
 @app.post("/aplicar_sugerencia")
 async def aplicar_sugerencia(request: Request):
-    import json, os
+    """Marca una sugerencia como aplicada y genera el código recomendado."""
+    import json, os, time
+    from openai import OpenAI
+
     data = await request.json()
     sugerencia_id = data.get("id")
+
     pendientes_file = "logs/sugerencias_pendientes.json"
     aplicadas_file = "logs/sugerencias_aplicadas.json"
+    codigo_file = "logs/sugerencias_codigo.json"
 
     with open(pendientes_file) as f:
         pendientes = json.load(f)
+
     sugerencia = next((s for s in pendientes if s["id"] == sugerencia_id), None)
     pendientes = [s for s in pendientes if s["id"] != sugerencia_id]
 
     with open(pendientes_file, "w") as f:
         json.dump(pendientes, f, indent=2)
 
-    if sugerencia:
-        sugerencia["estado"] = "aplicada"
-        if not os.path.exists(aplicadas_file):
-            aplicadas = []
-        else:
-            with open(aplicadas_file) as f:
-                aplicadas = json.load(f)
-        aplicadas.append(sugerencia)
-        with open(aplicadas_file, "w") as f:
-            json.dump(aplicadas, f, indent=2)
-        with open("logs/actividad.log", "a") as f:
-            import time
-            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se aplicó sugerencia de IA: {sugerencia['texto']}\n")
-    return {"status": "ok"}
+    if not sugerencia:
+        return {"status": "error", "msg": "Sugerencia no encontrada."}
+
+    sugerencia["estado"] = "aplicada"
+
+    if not os.path.exists(aplicadas_file):
+        aplicadas = []
+    else:
+        with open(aplicadas_file) as f:
+            aplicadas = json.load(f)
+    aplicadas.append(sugerencia)
+    with open(aplicadas_file, "w") as f:
+        json.dump(aplicadas, f, indent=2)
+
+    with open("logs/actividad.log", "a") as f:
+        f.write(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se aplicó sugerencia de IA: {sugerencia['texto']}\n"
+        )
+
+    openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    prompt = (
+        "La siguiente sugerencia de mejora fue aceptada: '"
+        + sugerencia["texto"]
+        + "'. Mi aplicación está hecha en HTML, JavaScript y Python (FastAPI). "
+        "Por favor, generá el código necesario para implementar esta mejora. "
+        "Decime claramente qué archivo debo modificar y dónde pegar el código, con comentarios y recomendaciones."
+    )
+
+    respuesta = (
+        openai.chat.completions.create(
+            model="gpt-4.1",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Sos un arquitecto digital que escribe código y explica cambios.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+        .choices[0]
+        .message.content.strip()
+    )
+
+    if not os.path.exists(codigo_file):
+        codigos = []
+    else:
+        with open(codigo_file) as f:
+            codigos = json.load(f)
+
+    codigos.append(
+        {
+            "id": sugerencia["id"],
+            "fecha": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "sugerencia": sugerencia["texto"],
+            "codigo": respuesta,
+        }
+    )
+    with open(codigo_file, "w") as f:
+        json.dump(codigos, f, indent=2, ensure_ascii=False)
+
+    return {"status": "ok", "codigo": respuesta}
 
 
 @app.post("/descartar_sugerencia")
