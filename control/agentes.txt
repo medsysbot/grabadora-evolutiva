@@ -27,3 +27,9 @@ Archivos: autodiagnostico.py / logs/auto_diagnostico.log / logs/actividad.log
 Rol: Conecta a OpenAI hasta el tope mensual de consultas, configurable.
 Estado: Activo
 Archivos: openai_client.py, openai_scheduler.py, consumo_mes.txt, mes_actual.txt
+
+[Agente: Asistente Evolutivo]
+Rol: Consulta automáticamente a GPT-4.1 todos los martes a las 9:00AM por sugerencias de mejora técnica, analizando el registro de actividad.
+Estado: Activo
+Archivos: consulta_mejoras.py, logs/mejoras_sugeridas.log, logs/actividad.log
+
