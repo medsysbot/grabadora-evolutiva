@@ -21,6 +21,28 @@ from sugerencias import (
     asegurar_archivos,
 )
 
+# Asegura que la carpeta y archivos de logs existan
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+archivos_iniciales = [
+    "logs/actividad.log",
+    "logs/mejoras_sugeridas.log",
+    "logs/sugerencias_pendientes.json",
+    "logs/sugerencias_aplicadas.json",
+    "logs/sugerencias_rechazadas.json",
+    "logs/sugerencias_codigo.json",
+]
+
+for archivo in archivos_iniciales:
+    if not os.path.exists(archivo):
+        if archivo.endswith(".json"):
+            with open(archivo, "w") as f:
+                f.write("[]")
+        else:
+            with open(archivo, "w") as f:
+                pass  # crea archivo vacío
+
 # ╔════════════════════════════════════════════════════════════╗
 # ║                 CONFIGURACIÓN DE ARCHIVOS                 ║
 # ╚════════════════════════════════════════════════════════════╝
