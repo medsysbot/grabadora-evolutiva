@@ -192,5 +192,12 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
-logs/sugerencias_*.json
-logs/*.log
+# Archivos de logs y sugerencias a versionar
+# (se mantienen para persistencia en despliegues)
+!logs/
+!logs/actividad.log
+!logs/mejoras_sugeridas.log
+!logs/sugerencias_pendientes.json
+!logs/sugerencias_aplicadas.json
+!logs/sugerencias_rechazadas.json
+!logs/sugerencias_codigo.json
