@@ -29,10 +29,9 @@ def consultar_mejora_gpt():
             {"role": "user", "content": prompt}
         ]
     ).choices[0].message.content.strip()
-    os.makedirs(os.path.dirname(LOG_MEJORAS), exist_ok=True)
     with open(LOG_MEJORAS, "a") as f:
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {respuesta}\n")
-    # Opcional: también registrar en actividad
+    # También registrar en actividad
     with open(LOG_ACTIVIDAD, "a") as f:
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Consulta automática de mejora a GPT-4.1\n")
 
