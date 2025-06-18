@@ -86,3 +86,16 @@ function diagnosticar() {
 function reparar() {
   fetch("/reparar").then(r => r.text()).then(alert);
 }
+
+function consultaManualMejora() {
+  fetch("/consultar_mejora_manual", { method: "POST" })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById("respuesta-mejora").innerText =
+        "Sugerencia IA: " + data.respuesta;
+    })
+    .catch(() => {
+      document.getElementById("respuesta-mejora").innerText =
+        "Error al consultar la IA.";
+    });
+}

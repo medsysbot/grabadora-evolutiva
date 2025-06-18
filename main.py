@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 import os
 import datetime
 from openai_client import consultar_openai
+from openai import OpenAI
 
 # ╔════════════════════════════════════════════════════════════╗
 # ║                 CONFIGURACIÓN DE ARCHIVOS                 ║
@@ -146,3 +147,37 @@ async def ver_historial(request: Request):
     return templates.TemplateResponse(
         "historial.html", {"request": request, "eventos": eventos}
     )
+
+# ╔════════════════════════════════════════════════════════════╗
+# ║      RUTA: /consultar_mejora_manual (POST desde web)       ║
+# ╚════════════════════════════════════════════════════════════╝
+
+@app.post("/consultar_mejora_manual")
+async def consultar_mejora_manual():
+    log_path = "logs/actividad.log"
+    if not os.path.exists(log_path):
+        actividad = "No hay actividad registrada aún."
+    else:
+        with open(log_path, "r") as f:
+            actividad = f.read()
+
+    prompt = (
+        "Este es el registro de actividad del sistema:\n"
+        f"{actividad}\n"
+        "¿Qué sugerencias de mejora, robustez o evolución recomendarías para esta aplicación de grabadora de voz autónoma?"
+    )
+    openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    respuesta = openai.chat.completions.create(
+        model="gpt-4.1",
+        messages=[
+            {"role": "system", "content": "Sos un arquitecto digital que da consejos técnicos de mejora."},
+            {"role": "user", "content": prompt}
+        ]
+    ).choices[0].message.content.strip()
+
+    log_mejoras = "logs/mejoras_sugeridas.log"
+    with open(log_mejoras, "a") as f:
+        import time
+        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {respuesta}\n")
+
+    return {"respuesta": respuesta}
