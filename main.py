@@ -15,7 +15,10 @@ from sugerencias import (
     guardar_pendiente,
     obtener_pendientes,
     guardar_pendientes,
-    agregar_aplicada,
+    mover_a_aplicadas,
+    mover_a_rechazadas,
+    registrar_codigo,
+    asegurar_archivos,
 )
 
 # ╔════════════════════════════════════════════════════════════╗
@@ -86,10 +89,6 @@ def inicializar_archivos():
         BITACORA_FILE: (
             f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Bitácora iniciada.\n"
         ),
-        PENDIENTES_JSON: "[]",
-        APLICADAS_JSON: "[]",
-        RECHAZADAS_JSON: "[]",
-        CODIGO_JSON: "[]",
         MEJORAS_LOG: "",
     }
 
@@ -98,14 +97,8 @@ def inicializar_archivos():
             with open(ruta, "w") as f:
                 f.write(contenido)
 
-    # Garantizar existencia de todos los archivos de logs
-    for ruta in LOG_FILES.values():
-        if not os.path.exists(ruta):
-            with open(ruta, "w") as f:
-                if ruta.endswith(".json"):
-                    f.write("[]")
-                else:
-                    f.write("")
+    # Garantizar archivos de logs y listas de sugerencias
+    asegurar_archivos()
 
 inicializar_archivos()
 
@@ -214,12 +207,7 @@ def ver_log(archivo: str):
     if nombre not in LOG_FILES:
         return PlainTextResponse("Archivo no permitido", status_code=400)
     ruta = LOG_FILES[nombre]
-    if not os.path.exists(ruta):
-        with open(ruta, "w") as f:
-            if ruta.endswith(".json"):
-                f.write("[]")
-            else:
-                f.write("")
+    asegurar_archivos()
     registrar_evento(f"Se consultó {nombre}")
     if ruta.endswith(".json"):
         with open(ruta) as f:
@@ -269,101 +257,42 @@ async def consultar_mejora_manual():
 
 @app.get("/sugerencias_pendientes")
 def sugerencias_pendientes():
-    import json, os
-    archivo = PENDIENTES_JSON
-    if not os.path.exists(archivo):
-        return []
-    with open(archivo) as f:
-        return json.load(f)
+    asegurar_archivos()
+    return obtener_pendientes()
 
 
 @app.post("/aplicar_sugerencia")
 async def aplicar_sugerencia(request: Request):
-    """Marca una sugerencia como aplicada y genera el código recomendado."""
-    import json, os, time
+    """Marca una sugerencia como aplicada, genera código y registra todo."""
+    import time
 
     data = await request.json()
     sugerencia_id = data.get("id")
 
-    pendientes_file = PENDIENTES_JSON
-    aplicadas_file = APLICADAS_JSON
-    codigo_file = CODIGO_JSON
-
-    with open(pendientes_file) as f:
-        pendientes = json.load(f)
-
-    sugerencia = next((s for s in pendientes if s["id"] == sugerencia_id), None)
-    pendientes = [s for s in pendientes if s["id"] != sugerencia_id]
-
-    with open(pendientes_file, "w") as f:
-        json.dump(pendientes, f, indent=2)
+    asegurar_archivos()
+    sugerencia = mover_a_aplicadas(sugerencia_id)
 
     if not sugerencia:
         return {"status": "error", "msg": "Sugerencia no encontrada."}
 
-    sugerencia["estado"] = "aplicada"
-
-    if not os.path.exists(aplicadas_file):
-        aplicadas = []
-    else:
-        with open(aplicadas_file) as f:
-            aplicadas = json.load(f)
-    aplicadas.append(sugerencia)
-    with open(aplicadas_file, "w") as f:
-        json.dump(aplicadas, f, indent=2)
-
-    with open(ACTIVIDAD_LOG, "a") as f:
-        f.write(
-            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se aplicó sugerencia de IA: {sugerencia['texto']}\n"
-        )
+    registrar_evento(f"Se aplicó sugerencia de IA: {sugerencia['texto']}")
 
     codigo = generar_codigo_mejora(sugerencia["texto"])
-
-    with open(codigo_file, "a") as f:
-        f.write(
-            json.dumps(
-                {
-                    "id": sugerencia["id"],
-                    "fecha": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "sugerencia": sugerencia["texto"],
-                    "codigo": codigo,
-                },
-                ensure_ascii=False,
-            )
-            + "\n"
-        )
+    registrar_codigo(sugerencia_id, sugerencia["texto"], codigo)
 
     return {"status": "ok", "codigo": codigo}
 
 
 @app.post("/descartar_sugerencia")
 async def descartar_sugerencia(request: Request):
-    import json, os, time
     data = await request.json()
     sugerencia_id = data.get("id")
-    pendientes_file = PENDIENTES_JSON
-    rechazadas_file = RECHAZADAS_JSON
 
-    with open(pendientes_file) as f:
-        pendientes = json.load(f)
-    sugerencia = next((s for s in pendientes if s["id"] == sugerencia_id), None)
-    pendientes = [s for s in pendientes if s["id"] != sugerencia_id]
-    with open(pendientes_file, "w") as f:
-        json.dump(pendientes, f, indent=2)
+    asegurar_archivos()
+    sugerencia = mover_a_rechazadas(sugerencia_id)
 
     if sugerencia:
-        sugerencia["estado"] = "rechazada"
-        if os.path.exists(rechazadas_file):
-            with open(rechazadas_file) as f:
-                rechazadas = json.load(f)
-        else:
-            rechazadas = []
-        rechazadas.append(sugerencia)
-        with open(rechazadas_file, "w") as f:
-            json.dump(rechazadas, f, indent=2)
-
-    with open(ACTIVIDAD_LOG, "a") as f:
-        f.write(
-            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Se descartó sugerencia de IA: {sugerencia_id}\n"
+        registrar_evento(
+            f"Se descartó sugerencia de IA: {sugerencia_id}"
         )
     return {"status": "ok"}
